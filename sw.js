@@ -1,99 +1,91 @@
-const CACHE_NAME = 'ping-pong-v6.0';
+const CACHE_NAME = 'ping-pong-github-v1';
+const BASE = '/Ping-Pong/';
+
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/Logo.jpg',
-  '/Logo.jpg'
+  BASE,
+  BASE + 'index.html',
+  BASE + 'manifest.json',
+  BASE + 'logo.jpg',
+  BASE + 'icon-192.svg',
+  BASE + 'icon-512.svg',
+  BASE + 'assets/index-BxFp-P_I.js',
+  BASE + 'assets/index-BVXbDgsd.css'
 ];
 
-// Install event
+// Instalación
 self.addEventListener('install', (event) => {
-  console.log('🔧 Service Worker installing...');
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('📦 Opened cache');
-        return cache.addAll(urlsToCache);
-      })
-      .then(() => {
-        console.log('✅ All files cached');
-        return self.skipWaiting();
-      })
+      .then((cache) => cache.addAll(urlsToCache))
+      .then(() => self.skipWaiting())
   );
 });
 
-// Activate event
+// Activación y eliminación de cachés anteriores
 self.addEventListener('activate', (event) => {
-  console.log('🚀 Service Worker activating...');
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('🗑️ Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    }).then(() => {
-      console.log('✅ Service Worker activated');
-      return self.clients.claim();
+    caches.keys()
+      .then((cacheNames) =>
+        Promise.all(
+          cacheNames.map((cacheName) => {
+            if (cacheName !== CACHE_NAME) {
+              return caches.delete(cacheName);
+            }
+          })
+        )
+      )
+      .then(() => self.clients.claim())
+  );
+});
+
+// Caché + red
+self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET') return;
+
+  event.respondWith(
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+
+      return fetch(event.request).then((networkResponse) => {
+        if (
+          !networkResponse ||
+          networkResponse.status !== 200 ||
+          networkResponse.type !== 'basic'
+        ) {
+          return networkResponse;
+        }
+
+        const responseToCache = networkResponse.clone();
+
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, responseToCache);
+        });
+
+        return networkResponse;
+      });
     })
   );
 });
 
-// Fetch event
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Return cached version or fetch from network
-        if (response) {
-          return response;
-        }
-        
-        return fetch(event.request).then((response) => {
-          // Don't cache non-successful responses
-          if (!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
-          }
-          
-          // Clone the response
-          const responseToCache = response.clone();
-          
-          caches.open(CACHE_NAME)
-            .then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
-          
-          return response;
-        });
-      })
-  );
-});
-
-// Background sync for offline functionality
+// Sincronización en segundo plano
 self.addEventListener('sync', (event) => {
   if (event.tag === 'background-sync') {
-    console.log('🔄 Background sync triggered');
     event.waitUntil(doBackgroundSync());
   }
 });
 
 async function doBackgroundSync() {
-  // Handle offline data sync when connection is restored
-  console.log('📡 Syncing offline data...');
+  console.log('Sincronizando datos offline...');
 }
 
-// Push notifications (for future use)
+// Notificaciones push
 self.addEventListener('push', (event) => {
-  console.log('📬 Push message received');
-  
   const options = {
     body: event.data ? event.data.text() : 'Nueva notificación',
-    icon: '/icon-192.png',
-    badge: '/icon-192.png',
+    icon: BASE + 'icon-192.svg',
+    badge: BASE + 'icon-192.svg',
     vibrate: [200, 100, 200],
     data: {
       dateOfArrival: Date.now(),
@@ -103,30 +95,28 @@ self.addEventListener('push', (event) => {
       {
         action: 'explore',
         title: 'Ver',
-        icon: '/icon-192.png'
+        icon: BASE + 'icon-192.svg'
       },
       {
         action: 'close',
         title: 'Cerrar',
-        icon: '/icon-192.png'
+        icon: BASE + 'icon-192.svg'
       }
     ]
   };
-  
+
   event.waitUntil(
     self.registration.showNotification('Tenis de SobreMesa', options)
   );
 });
 
-// Notification click handler
+// Pulsación sobre una notificación
 self.addEventListener('notificationclick', (event) => {
-  console.log('🔔 Notification click received');
-  
   event.notification.close();
-  
+
   if (event.action === 'explore') {
     event.waitUntil(
-      clients.openWindow('/')
+      clients.openWindow(BASE)
     );
   }
 });
