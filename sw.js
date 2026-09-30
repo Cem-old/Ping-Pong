@@ -8,8 +8,8 @@ const urlsToCache = [
   BASE + 'logo.jpg',
   BASE + 'icon-192.svg',
   BASE + 'icon-512.svg',
-  BASE + 'assets/index-BxFp-P_I.js',
-  BASE + 'assets/index-BVXbDgsd.css'
+ BASE + 'assets/index-BxFp-P_I.js',
+BASE + 'assets/index-BVXbDgsd.css'
 ];
 
 // Instalación
